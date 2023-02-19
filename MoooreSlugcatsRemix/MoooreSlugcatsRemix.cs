@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,13 +11,26 @@ using System.Security.Permissions;
 [assembly: SecurityPermission(SecurityAction.RequestMinimum, SkipVerification = true)]
 namespace MoooreSlugcatsRemix
 {
-    [BepInPlugin("stupidcat.moooreslugcatsremix", "Mooore Slugcats Remix", "1.0.0")]
+    
+    [BepInPlugin(MOD_ID, "Mooore Slugcats Remix", "1.0.1")]
     public class MoooreSlugcatsRemix : BaseUnityPlugin
     {
+        public const string MOD_ID = "stupidcat.moooreslugcatsremix";
+        public static MoooreSlugcatsRemix INSTANCE;
+
         public void OnEnable()
         {
-            On.Room.Update += RoomOnUpdate;
-            On.Player.NewRoom += PlayerOnNewRoom;
+            INSTANCE = this;
+
+            On.RainWorld.OnModsInit += (orig, self) =>
+            {
+                orig(self);
+
+                MachineConnector.SetRegisteredOI(MOD_ID, new MSOptions());
+
+                On.Room.Update += RoomOnUpdate;
+                On.Player.NewRoom += PlayerOnNewRoom;
+            };
         }
 
         private void PlayerOnNewRoom(On.Player.orig_NewRoom orig, Player self, Room newroom)
@@ -36,7 +50,9 @@ namespace MoooreSlugcatsRemix
         {
             orig(self);
             
-            if ((Input.GetKey(KeyCode.L) && !pressed) || (Input.GetKey(KeyCode.L) && Input.GetKey(KeyCode.RightShift)))
+            if ((Input.GetKey(MSOptions.SPAWN_KEY.Value) && !pressed) 
+                || (Input.GetKey(MSOptions.SPAWN_KEY.Value) && Input.GetKey(MSOptions.MULTI_SPAWN_MODIFIER.Value))
+                || (Input.GetKey(MSOptions.MULTI_SPAWN_KEY.Value)))
             {
                 pressed = true;
                 if (!(self.game.IsStorySession && self.abstractRoom.connections.Length != 0)
